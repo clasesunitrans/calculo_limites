@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Límites AI - Calculadora de Límites</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.7.0/math.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --primary-blue: #1a365d;
+            --secondary-blue: #4299e1;
+            --light-blue: #ebf8ff;
+            --orange: #ed8936;
+            --dark-orange: #dd6b20;
+            --green: #48bb78;
+            --yellow: #ecc94b;
+            --purple: #9f7aea;
+            --red: #f56565;
+            --gray: #e2e8f0;
+            --dark-gray: #4a5568;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: white;
+            color: var(--primary-blue);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--gray);
+        }
+
+        h1 {
+            color: var(--primary-blue);
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: var(--dark-gray);
+            font-size: 1.1rem;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        @media (min-width: 768px) {
+            .app-container {
+                flex-direction: row;
+            }
+        }
+
+        .input-section, .output-section {
+            flex: 1;
+        }
+
+        .input-section {
+            background-color: var(--light-blue);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .output-section {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--gray);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--primary-blue);
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--gray);
+            border-radius: 4px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--secondary-blue);
+        }
+
+        .btn {
+            background-color: var(--orange);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            background-color: var(--dark-orange);
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-blue);
+        }
+
+        .btn-secondary:hover {
+            background-color: #3182ce;
+        }
+
+        .btn-tertiary {
+            background-color: var(--green);
+        }
+
+        .btn-tertiary:hover {
+            background-color: #38a169;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .button-group .btn {
+            flex: 1;
+        }
+
+        .functions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .function-card {
+            padding: 15px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .function-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .power {
+            background-color: var(--secondary-blue);
+        }
+
+        .exponential {
+            background-color: var(--green);
+        }
+
+        .trigonometric {
+            background-color: var(--yellow);
+            color: var(--primary-blue);
+        }
+
+        .logarithmic {
+            background-color: var(--purple);
+        }
+
+        .other {
+            background-color: var(--red);
+        }
+
+        .result-container {
+            min-height: 200px;
+            padding: 20px;
+            background-color: var(--light-blue);
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid var(--orange);
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            color: var(--red);
+            background-color: #fff5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid var(--red);
+            display: none;
+        }
+
+        .math-expression, .math-result {
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            padding: 10px;
+            background-color: white;
+            border-radius: 4px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+
+        .note {
+            font-size: 14px;
+            color: var(--dark-gray);
+            margin-top: 15px;
+        }
+
+        a {
+            color: var(--secondary-blue);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 2px solid var(--gray);
+            color: var(--dark-gray);
+        }
+
+        /* Estilos para accesibilidad */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
+        [aria-hidden="true"] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Límites AI</h1>
+            <p class="subtitle">Calculadora inteligente de límites para estudiantes</p>
+        </header>
+
+        <main class="app-container">
+            <section class="input-section" aria-labelledby="input-section-heading">
+                <h2 id="input-section-heading" class="sr-only">Entrada de datos</h2>
+                
+                <div class="form-group">
+                    <label for="math-expression">Ingresa tu función f(x):</label>
+                    <input type="text" id="math-expression" class="input-field" 
+                           placeholder="Ej: (x^2 - 1)/(x - 1)" aria-required="true">
+                </div>
+
+                <div class="form-group">
+                    <label for="limit-point">Punto hacia el que tiende x:</label>
+                    <input type="text" id="limit-point" class="input-field" 
+                           placeholder="Ej: 1, inf, -inf, pi/2">
+                </div>
+
+                <div class="button-group">
+                    <button id="calculate-btn" class="btn">Calcular Límite</button>
+                    <button id="clear-btn" class="btn btn-secondary">Limpiar</button>
+                </div>
+
+               <!-- <button id="pdf-btn" class="btn btn-tertiary">Generar PDF de Límites</button> -->
+
+                <div class="error-message" id="error-message" role="alert"></div>
+
+                <div class="functions-grid">
+                    <div class="function-card power" onclick="insertFunction('x^n', 'Potencia')">
+                        Potencia (x^n)
+                    </div>
+                    <div class="function-card exponential" onclick="insertFunction('e^x', 'Exponencial')">
+                        Exponencial (e^x)
+                    </div>
+                    <div class="function-card trigonometric" onclick="insertFunction('sin(x)', 'Trigonométrica')">
+                        Seno (sin(x))
+                    </div>
+                    <div class="function-card trigonometric" onclick="insertFunction('cos(x)', 'Trigonométrica')">
+                        Coseno (cos(x))
+                    </div>
+                    <div class="function-card trigonometric" onclick="insertFunction('tan(x)', 'Trigonométrica')">
+                        Tangente (tan(x))
+                    </div>
+                    <div class="function-card logarithmic" onclick="insertFunction('ln(x)', 'Logarítmica')">
+                        Logaritmo natural (ln(x))
+                    </div>
+                    <div class="function-card other" onclick="insertFunction('sqrt(x)', 'Raíz cuadrada')">
+                        Raíz cuadrada (√x)
+                    </div>
+                    <div class="function-card other" onclick="insertFunction('abs(x)', 'Valor absoluto')">
+                        Valor absoluto (|x|)
+                    </div>
+                </div>
+            </section>
+
+            <section class="output-section" aria-labelledby="output-section-heading">
+                <h2 id="output-section-heading">Resultado</h2>
+                
+                <div class="loading" id="loading">
+                    <div class="spinner" aria-hidden="true"></div>
+                    <p>Calculando límite...</p>
+                </div>
+
+                <div class="result-container" id="result-container">
+                    <p>Ingresa una función y un punto para calcular su límite.</p>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Límites AI - Herramienta educativa para cálculo diferencial</p>
+            <p>Basado en <a href="https://tutorial.math.lamar.edu" target="_blank">Calculus Cheat Sheet de Paul Dawkins</a></p>
+        </footer>
+    </div>
+
+    <script>
+        // Inicializar jsPDF
+        const { jsPDF } = window.jspdf;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const calculateBtn = document.getElementById('calculate-btn');
+            const clearBtn = document.getElementById('clear-btn');
+            const pdfBtn = document.getElementById('pdf-btn');
+            const mathExpression = document.getElementById('math-expression');
+            const limitPoint = document.getElementById('limit-point');
+            const resultContainer = document.getElementById('result-container');
+            const loading = document.getElementById('loading');
+            const errorMessage = document.getElementById('error-message');
+
+            // Función para calcular límites usando math.js
+            function calcularLimite(func, punto) {
+                try {
+                    // Preprocesar entrada
+                    const funcPreprocesada = func
+                        .replace(/\^/g, '^')
+                        .replace(/sin\(/g, 'sin(')
+                        .replace(/cos\(/g, 'cos(')
+                        .replace(/tan\(/g, 'tan(')
+                        .replace(/ln\(/g, 'log(')
+                        .replace(/sqrt\(/g, 'sqrt(')
+                        .replace(/abs\(/g, 'abs(');
+                    
+                    // Convertir el punto a formato math.js
+                    let puntoEvaluacion;
+                    if (punto.toLowerCase() === 'inf') {
+                        puntoEvaluacion = Infinity;
+                    } else if (punto.toLowerCase() === '-inf') {
+                        puntoEvaluacion = -Infinity;
+                    } else {
+                        puntoEvaluacion = math.evaluate(punto);
+                    }
+                    
+                    // Calcular el límite
+                    return math.limit(funcPreprocesada, 'x', puntoEvaluacion).toString();
+                } catch (error) {
+                    console.error("Error al calcular el límite:", error);
+                    return null;
+                }
+            }
+
+            // Botón Calcular Límite
+            calculateBtn.addEventListener('click', function() {
+                const expression = mathExpression.value.trim();
+                const point = limitPoint.value.trim();
+                
+                if (!expression) {
+                    showError('Por favor, ingresa una función.');
+                    return;
+                }
+                
+                if (!point) {
+                    showError('Por favor, ingresa un punto para el límite.');
+                    return;
+                }
+                
+                loading.style.display = 'block';
+                resultContainer.innerHTML = '';
+                errorMessage.style.display = 'none';
+                
+                setTimeout(() => {
+                    try {
+                        const resultadoLocal = calcularLimite(expression, point);
+                        
+                        if (resultadoLocal !== null) {
+                            resultContainer.innerHTML = `
+                                <h3>Límite calculado:</h3>
+                                <div class="math-expression">lim<sub>x→${point}</sub> ${expression}</div>
+                                <h3>Resultado:</h3>
+                                <div class="math-result">${resultadoLocal}</div>
+                                <p class="note">Para una explicación paso a paso, 
+                                <a href="https://copilot.microsoft.com/?q=Calcula+el+límite+de+${encodeURIComponent(expression)}+cuando+x+tiende+a+${encodeURIComponent(point)}+Explica+paso+a+paso" target="_blank">consulta en Copilot</a>.</p>
+                            `;
+                        } else {
+                            window.open(`https://copilot.microsoft.com/?q=Calcula+el+límite+de+${encodeURIComponent(expression)}+cuando+x+tiende+a+${encodeURIComponent(point)}+Explica+paso+a+paso`, '_blank');
+                            resultContainer.innerHTML = `
+                                <h3>Límite a calcular:</h3>
+                                <div class="math-expression">lim<sub>x→${point}</sub> ${expression}</div>
+                                <p>El límite no pudo calcularse localmente. Se abrió Copilot en una nueva pestaña.</p>
+                            `;
+                        }
+                    } catch (error) {
+                        showError('Error al procesar la expresión. Inténtalo de nuevo.');
+                        console.error(error);
+                    } finally {
+                        loading.style.display = 'none';
+                    }
+                }, 500);
+            });
+            
+            // Botón Limpiar
+            clearBtn.addEventListener('click', function() {
+                mathExpression.value = '';
+                limitPoint.value = '';
+                resultContainer.innerHTML = '<p>Ingresa una función y un punto para calcular su límite.</p>';
+                errorMessage.style.display = 'none';
+                
+                showNotification('Campos limpiados', 'var(--secondary-blue)');
+            });
+            
+            // Botón Generar PDF
+            pdfBtn.addEventListener('click', function() {
+                loading.style.display = 'block';
+                
+                setTimeout(() => {
+                    try {
+                        generatePDF();
+                        loading.style.display = 'none';
+                        showNotification('PDF generado con éxito', 'var(--green)');
+                    } catch (error) {
+                        showError('Error al generar el PDF. Inténtalo de nuevo.');
+                        loading.style.display = 'none';
+                        console.error(error);
+                    }
+                }, 500);
+            });
+            
+            function showError(message) {
+                errorMessage.textContent = message;
+                errorMessage.style.display = 'block';
+            }
+            
+            function showNotification(message, color) {
+                const notification = document.createElement('div');
+                notification.textContent = message;
+                notification.style.position = 'fixed';
+                notification.style.bottom = '20px';
+                notification.style.right = '20px';
+                notification.style.backgroundColor = color;
+                notification.style.color = 'white';
+                notification.style.padding = '10px 20px';
+                notification.style.borderRadius = '4px';
+                notification.style.zIndex = '1000';
+                notification.style.transition = 'opacity 0.3s';
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.style.opacity = '0';
+                    setTimeout(() => document.body.removeChild(notification), 300);
+                }, 2000);
+            }
+            
+            function generatePDF() {
+                // Crear un nuevo documento PDF en orientación horizontal
+                const doc = new jsPDF('l', 'mm', 'a4');
+                
+                // Título del PDF
+                doc.setFontSize(20);
+                doc.setTextColor(26, 54, 93);
+                doc.text('Tabla Completa de Límites', doc.internal.pageSize.width / 2, 20, { align: 'center' });
+                
+                doc.setFontSize(12);
+                doc.setTextColor(74, 85, 104);
+                doc.text('Guía de referencia para cálculo de límites', doc.internal.pageSize.width / 2, 28, { align: 'center' });
+                
+                // Encabezados de la tabla
+                doc.setFontSize(11);
+                doc.setTextColor(255, 255, 255);
+                doc.setFillColor(66, 153, 225);
+                
+                let y = 40;
+                doc.rect(10, y - 5, doc.internal.pageSize.width - 20, 10, 'F');
+                doc.text('Tipo de Límite', 20, y + 2);
+                doc.text('Definición', 70, y + 2);
+                doc.text('Ejemplo', 150, y + 2);
+                doc.text('Resultado', 230, y + 2);
+                
+                // Contenido de la tabla (basado en el documento)
+                doc.setFontSize(10);
+                doc.setTextColor(0, 0, 0);
+                
+                const limites = [
+                    ['Límite básico', 'lim_{x→a} f(x) = L', 'lim_{x→2} (x^2 + 3) = 7', '7'],
+                    ['Límite por izquierda', 'lim_{x→a^-} f(x) = L', 'lim_{x→0^-} 1/x = -∞', '-∞'],
+                    ['Límite por derecha', 'lim_{x→a^+} f(x) = L', 'lim_{x→0^+} 1/x = ∞', '∞'],
+                    ['Límite en infinito', 'lim_{x→∞} f(x) = L', 'lim_{x→∞} (1/x) = 0', '0'],
+                    ['Límite infinito', 'lim_{x→a} f(x) = ∞', 'lim_{x→0} 1/x^2 = ∞', '∞'],
+                    ['Indeterminación 0/0', 'Factorizar y cancelar', 'lim_{x→1} (x^2-1)/(x-1) = 2', '2'],
+                    ['Indeterminación ∞/∞', 'L\'Hôpital', 'lim_{x→∞} (e^x/x) = ∞', '∞'],
+                    ['Funciones continuas', 'lim_{x→a} f(x) = f(a)', 'lim_{x→π} sin(x) = 0', '0'],
+                    ['Exponenciales', 'lim_{x→∞} e^x = ∞', 'lim_{x→-∞} e^x = 0', '0'],
+                    ['Logaritmos', 'lim_{x→0^+} ln(x) = -∞', 'lim_{x→∞} ln(x) = ∞', '∞'],
+                    ['Polinomios', 'lim_{x→∞} ax^n = sgn(a)∞', 'lim_{x→-∞} -2x^3 = ∞', '∞'],
+                    ['Funciones trigonométricas', 'lim_{x→0} sin(x)/x = 1', 'lim_{x→0} (1-cos(x))/x = 0', '1 y 0'],
+                    ['Límites laterales distintos', 'lim_{x→a} f(x) no existe', 'lim_{x→0} |x|/x = No existe', 'No existe']
+                ];
+                
+                y += 10;
+                let rowColor = false;
+                
+                limites.forEach((row, index) => {
+                    if (rowColor) {
+                        doc.setFillColor(235, 248, 255);
+                        doc.rect(10, y - 3, doc.internal.pageSize.width - 20, 8, 'F');
+                    }
+                    rowColor = !rowColor;
+                    
+                    if (y > doc.internal.pageSize.height - 20) {
+                        doc.addPage('l');
+                        y = 20;
+                        doc.setFontSize(11);
+                        doc.setTextColor(255, 255, 255);
+                        doc.setFillColor(66, 153, 225);
+                        doc.rect(10, y - 5, doc.internal.pageSize.width - 20, 10, 'F');
+                        doc.text('Tipo de Límite', 20, y + 2);
+                        doc.text('Definición', 70, y + 2);
+                        doc.text('Ejemplo', 150, y + 2);
+                        doc.text('Resultado', 230, y + 2);
+                        doc.setFontSize(10);
+                        doc.setTextColor(0, 0, 0);
+                        y += 10;
+                        rowColor = false;
+                    }
+                    
+                    doc.text(row[0], 20, y);
+                    doc.text(row[1], 70, y);
+                    doc.text(row[2], 150, y);
+                    doc.text(row[3], 230, y);
+                    
+                    y += 7;
+                });
+                
+                // Propiedades de límites
+                y += 10;
+                doc.setFontSize(12);
+                doc.setTextColor(26, 54, 93);
+                doc.text('Propiedades de los Límites:', 20, y);
+                y += 7;
+                doc.setFontSize(10);
+                doc.setTextColor(0, 0, 0);
+                
+                const propiedades = [
+                    '1. lim [cf(x)] = c·lim f(x)',
+                    '2. lim [f(x) ± g(x)] = lim f(x) ± lim g(x)',
+                    '3. lim [f(x)g(x)] = lim f(x) · lim g(x)',
+                    '4. lim [f(x)/g(x)] = lim f(x)/lim g(x) (si lim g(x) ≠ 0)',
+                    '5. lim [f(x)]^n = [lim f(x)]^n',
+                    '6. lim ⁿ√f(x) = ⁿ√lim f(x)'
+                ];
+                
+                propiedades.forEach(prop => {
+                    if (y > doc.internal.pageSize.height - 20) {
+                        doc.addPage('l');
+                        y = 20;
+                    }
+                    doc.text(prop, 20, y);
+                    y += 7;
+                });
+                
+                // Técnicas de evaluación
+                y += 10;
+                doc.setFontSize(12);
+                doc.setTextColor(26, 54, 93);
+                doc.text('Técnicas de Evaluación:', 20, y);
+                y += 7;
+                doc.setFontSize(10);
+                
+                const tecnicas = [
+                    '• Sustitución directa (funciones continuas)',
+                    '• Factorización y cancelación',
+                    '• Racionalización',
+                    '• Regla de L\'Hôpital (para 0/0 o ∞/∞)',
+                    '• Comparación de términos dominantes en ∞'
+                ];
+                
+                tecnicas.forEach(tec => {
+                    if (y > doc.internal.pageSize.height - 20) {
+                        doc.addPage('l');
+                        y = 20;
+                    }
+                    doc.text(tec, 20, y);
+                    y += 7;
+                });
+                
+                // Pie de página
+                doc.setFontSize(10);
+                doc.setTextColor(74, 85, 104);
+                doc.text('Generado por Límites AI - Basado en Calculus Cheat Sheet de Paul Dawkins - © ' + new Date().getFullYear(), 
+                         doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
+                
+                doc.save('Tabla_Completa_de_Limites.pdf');
+            }
+        });
+        
+        function insertFunction(func, type) {
+            const input = document.getElementById('math-expression');
+            const currentValue = input.value;
+            const cursorPos = input.selectionStart;
+            
+            input.value = currentValue.substring(0, cursorPos) + func + currentValue.substring(cursorPos);
+            input.selectionStart = cursorPos + func.length;
+            input.selectionEnd = cursorPos + func.length;
+            input.focus();
+            
+            showNotification(`Función ${type} insertada`, 'var(--purple)');
+        }
+    </script>
+</body>
+</html>
